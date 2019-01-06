@@ -1,11 +1,12 @@
 import Foundation
 
 public struct DependencyGraph: Codable {
-    public var connections: [Connection] = []
+    public let nodes: [Node]
+    public let links: [Link]
 
-    public init(_ pifCache: PIFCache) {
+    public init?(_ pifCache: PIFCache) {
         guard let workspace = pifCache.workspaces.first else {
-            return
+            return nil
         }
         let targets: [String: PIFCache.Target] = workspace
             .projects
@@ -13,13 +14,19 @@ public struct DependencyGraph: Codable {
                 let targets = Dictionary(uniqueKeysWithValues: project.targets.map { ($0.guid, $0) })
                 return acc.merging(targets) { $1 }
         }
-        connections = targets
+        nodes = targets.values.map { Node(id: $0.guid, name: $0.name) }
+        links = targets
             .values
-            .flatMap { target in target.dependencies.map { Connection(from: target, to: targets[$0]) } }
+            .flatMap { target in target.dependencies.map { Link(source: target.guid, target: targets[$0]?.guid) } }
     }
 
-    public struct Connection: Codable {
-        public let from: PIFCache.Target
-        public let to: PIFCache.Target?
+    public struct Node: Codable {
+        public let id: String
+        public let name: String
+    }
+
+    public struct Link: Codable {
+        public let source: String
+        public let target: String?
     }
 }

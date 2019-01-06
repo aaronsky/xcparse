@@ -19,17 +19,12 @@ func printAsJSON(_ graph: DependencyGraph) throws {
 }
 
 func printStdOut(_ graph: DependencyGraph) {
-    for connection in graph.connections {
-        let from = "\(connection.from.name) (\(connection.from.guid))"
-        let to: String
-        if let toConnection = connection.to {
-            to = "\(toConnection.name) (\(toConnection.guid))"
-        } else {
-            to = "<NULL>"
-        }
+    for connection in graph.links {
+        let from = connection.source
+        let to = connection.target ?? "<NULL>"
         print(from, "~>", to)
     }
-    print(graph.connections.count, "connections in all")
+    print(graph.links.count, "connections in all")
 }
 
 let start = Date()
@@ -48,7 +43,10 @@ guard let pathArg = args.get(pathArgument) else {
 let path = pathArg.path.asString
 
 let derivedData = try DerivedData(contentsOfFile: path)
-let dependencyGraph = DependencyGraph(derivedData.pifCache)
+guard let dependencyGraph = DependencyGraph(derivedData.pifCache) else {
+    print("PIFCache has no workspaces, so a graph could not be created")
+    exit(1)
+}
 
 switch args.get(reportArgument) {
 case .some(.json):
