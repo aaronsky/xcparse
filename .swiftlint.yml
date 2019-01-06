@@ -1,5 +1,6 @@
 disabled_rules:
   - nesting
   - line_length
+  - identifier_name
 excluded:
   - .build/

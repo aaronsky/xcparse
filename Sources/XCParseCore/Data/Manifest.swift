@@ -8,9 +8,7 @@ public struct Manifest: Codable {
     public let commands: [Command]
 
     public init(contentsOfFile path: String) throws {
-        guard let url = URL(string: path) else {
-            throw IOError.invalidFilePath(path)
-        }
+        let url = URL(fileURLWithPath: path)
         try self.init(contentsOf: url)
     }
 
@@ -23,12 +21,19 @@ public struct Manifest: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         client = try container.decode(Client.self, forKey: .client)
+
+        // We decode and then map because of how the key-value pairs are represented in the manifest file.
+        // I would like to find a way to decode a dictionary as an array of objects, if at all possible,
+        // since this is very expensive
         targets = try container.decode([String: [String]].self, forKey: .targets)
             .map { Target(name: $0.key, values: $0.value) }
         nodes = try container.decode([String: Node.Properties].self, forKey: .nodes)
             .map { Node(path: $0.key, properties: $0.value) }
         commands = try container.decode([String: Command.Properties].self, forKey: .commands)
             .map { Command(command: $0.key, properties: $0.value) }
+        //        targets = try container.decode([Target].self, forKey: .targets)
+        //        nodes = try container.decode([Node].self, forKey: .nodes)
+        //        commands = try container.decode([Command].self, forKey: .commands)
     }
 
     public struct Client: Codable {
@@ -109,5 +114,4 @@ public struct Manifest: Codable {
             }
         }
     }
-
 }

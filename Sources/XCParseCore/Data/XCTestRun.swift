@@ -1,26 +1,11 @@
 import Foundation
 
-private struct DynamicCodingKey: CodingKey {
-    var intValue: Int?
-    var stringValue: String
-
-    init?(intValue: Int) {
-        return nil
-    }
-
-    init?(stringValue: String) {
-        self.stringValue = stringValue
-    }
-}
-
 public struct XCTestRun: Codable {
     public private(set) var targets: [Target] = []
     public private(set) var metadata: Metadata
 
     public init(contentsOfFile path: String) throws {
-        guard let url = URL(string: path) else {
-            throw IOError.invalidFilePath(path)
-        }
+        let url = URL(fileURLWithPath: path)
         try self.init(contentsOf: url)
     }
 
@@ -35,7 +20,7 @@ public struct XCTestRun: Codable {
 
         var meta: Metadata?
         for key in container.allKeys {
-            if key.stringValue == CodingKeys.metadata.rawValue {
+            if key.stringValue == "__xctestrun_metadata__" {
                 meta = try container.decode(Metadata.self, forKey: key)
                 continue
             }
@@ -45,10 +30,6 @@ public struct XCTestRun: Codable {
             throw Error.noMetadataFound
         }
         self.metadata = metadata
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case metadata = "__xctestrun_metadata__"
     }
 
     public struct Target: Codable {
@@ -112,7 +93,7 @@ public struct XCTestRun: Codable {
             }
         }
     }
-    
+
     private enum Error: Swift.Error {
         case noMetadataFound
     }
